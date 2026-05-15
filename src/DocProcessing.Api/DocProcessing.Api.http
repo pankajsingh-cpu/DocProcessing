@@ -1,0 +1,6 @@
+@DocProcessing.Api_HostAddress = http://localhost:5137
+
+GET {{DocProcessing.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,5 @@
+{
+  "name": "coa_simple",
+  "expectedIntents": ["change_of_address"],
+  "ocrText": "--- PAGE 1 ---\nComputershare Investor Services\nUpdate of Shareholder Address\n\nHolder ID: 1234567890\nName: Mr A Smith\n\nOld address: 12 Old Lane, Edinburgh EH1 1AA\nNew address: 5 New Street, Glasgow G1 2BB\nEffective from: 01 June 2026\n\nContact telephone: 0131 123 4567\n\nSigned: A. Smith\nDate: 14 May 2026\n"
+}

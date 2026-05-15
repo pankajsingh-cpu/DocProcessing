@@ -1,0 +1,5 @@
+{
+  "name": "bereavement_simple",
+  "expectedIntents": ["bereavement"],
+  "ocrText": "--- PAGE 1 ---\nNotification of Death\n\nHolder ID: 9988776655\nDeceased holder: Mrs J Brown\nDate of death: 20 April 2026\n\nGrant of Probate reference: PRO/2026/0042\nExecutor: Mr R Brown\nRelationship to deceased: Son\n\nPlease find enclosed a copy of the death certificate (ref. DC-2026-1184).\n\nSigned: R. Brown\nDate: 12 May 2026\n"
+}

@@ -1,0 +1,83 @@
+[
+  {
+    "name": "change_of_address",
+    "definition": "Holder requests a new postal address on their share register entry.",
+    "keywords": [
+      "change of address",
+      "new address",
+      "moved",
+      "relocate",
+      "COA",
+      "postal address",
+      "mailing address",
+      "update address"
+    ],
+    "required_fields": ["holder_id", "old_address", "new_address", "effective_date"],
+    "optional_fields": ["phone", "email", "signature_present"]
+  },
+  {
+    "name": "bereavement",
+    "definition": "Notification of a holder's death; transfers rights to the executor, administrator, or beneficiary.",
+    "keywords": [
+      "deceased",
+      "death",
+      "bereavement",
+      "probate",
+      "executor",
+      "administrator",
+      "grant of probate",
+      "letters of administration",
+      "death certificate"
+    ],
+    "required_fields": ["holder_id", "date_of_death", "executor_name"],
+    "optional_fields": ["death_certificate_ref", "grant_of_probate_ref", "relationship_to_holder"]
+  },
+  {
+    "name": "buy_sell_shares",
+    "definition": "Instruction from a holder (or their broker) to buy or sell a quantity of shares against their account.",
+    "keywords": [
+      "buy shares",
+      "sell shares",
+      "purchase",
+      "sale",
+      "trade instruction",
+      "limit order",
+      "market order",
+      "broker"
+    ],
+    "required_fields": ["holder_id", "instruction_type", "share_quantity", "instruction_date"],
+    "optional_fields": ["limit_price", "settlement_account", "broker_reference"]
+  },
+  {
+    "name": "deposit_cheque",
+    "definition": "Holder submits a cheque (e.g. a dividend cheque or reinvestment payment) for deposit against their account.",
+    "keywords": [
+      "cheque",
+      "check",
+      "deposit",
+      "dividend cheque",
+      "payment",
+      "draft",
+      "endorsement"
+    ],
+    "required_fields": ["holder_id", "cheque_number", "cheque_amount", "cheque_date"],
+    "optional_fields": ["payee_name", "bank_name", "sort_code"]
+  },
+  {
+    "name": "drip_ocp",
+    "definition": "Dividend Reinvestment Plan (DRIP) or Optional Cash Purchase (OCP) enrolment, change, or termination.",
+    "keywords": [
+      "DRIP",
+      "dividend reinvestment",
+      "OCP",
+      "optional cash purchase",
+      "reinvest",
+      "enrol",
+      "enroll",
+      "terminate",
+      "opt out"
+    ],
+    "required_fields": ["holder_id", "plan_type", "action", "effective_date"],
+    "optional_fields": ["reinvest_percentage", "cash_contribution_amount", "frequency"]
+  }
+]

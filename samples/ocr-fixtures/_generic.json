@@ -1,0 +1,10 @@
+{
+  "modelId": "stub-prebuilt-layout",
+  "apiVersion": "stub",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "content": "Computershare Investor Services PLC\nThe Pavilions, Bridgwater Road, Bristol BS99 6ZZ\n\nDear Sir/Madam\n\nRe: Change of registered address for shareholder reference C-12345678\n\nI am writing to inform you that I have moved house and would like to update my registered address on my shareholding.\n\nPrevious address: 12 Old Lane, Edinburgh EH1 1AA\nNew address: 45 New Court, Edinburgh EH3 9XY\nEffective date: 1 February 2026\n\nPlease confirm in writing once the change has been applied.\n\nYours faithfully,\nJ. Smith"
+    }
+  ]
+}

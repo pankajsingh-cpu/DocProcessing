@@ -1,0 +1,27 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DocProcessing.Api/DocProcessing.Api.csproj" />
+    <Project Path="src/DocProcessing.AppHost/DocProcessing.AppHost.csproj" />
+    <Project Path="src/DocProcessing.Classifier/DocProcessing.Classifier.csproj" />
+    <Project Path="src/DocProcessing.Common/DocProcessing.Common.csproj" />
+    <Project Path="src/DocProcessing.Contracts/DocProcessing.Contracts.csproj" />
+    <Project Path="src/DocProcessing.Embeddings/DocProcessing.Embeddings.csproj" />
+    <Project Path="src/DocProcessing.Ingest.Service/DocProcessing.Ingest.Service.csproj" />
+    <Project Path="src/DocProcessing.Ingest.Watcher/DocProcessing.Ingest.Watcher.csproj" />
+    <Project Path="src/DocProcessing.KnowledgeBase/DocProcessing.KnowledgeBase.csproj" />
+    <Project Path="src/DocProcessing.Ocr/DocProcessing.Ocr.csproj" />
+    <Project Path="src/DocProcessing.Orchestration/DocProcessing.Orchestration.csproj" />
+    <Project Path="src/DocProcessing.Outbound.Workflow/DocProcessing.Outbound.Workflow.csproj" />
+    <Project Path="src/DocProcessing.Persistence.Archive/DocProcessing.Persistence.Archive.csproj" />
+    <Project Path="src/DocProcessing.Persistence.Sql/DocProcessing.Persistence.Sql.csproj" />
+    <Project Path="src/DocProcessing.ServiceDefaults/DocProcessing.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DocProcessing.Classifier.Tests/DocProcessing.Classifier.Tests.csproj" />
+    <Project Path="tests/DocProcessing.Ingest.Service.Tests/DocProcessing.Ingest.Service.Tests.csproj" />
+    <Project Path="tests/DocProcessing.Ingest.Watcher.Tests/DocProcessing.Ingest.Watcher.Tests.csproj" />
+    <Project Path="tests/DocProcessing.Ocr.Tests/DocProcessing.Ocr.Tests.csproj" />
+    <Project Path="tests/DocProcessing.Orchestration.Tests/DocProcessing.Orchestration.Tests.csproj" />
+    <Project Path="tests/DocProcessing.Persistence.Tests/DocProcessing.Persistence.Tests.csproj" />
+  </Folder>
+</Solution>

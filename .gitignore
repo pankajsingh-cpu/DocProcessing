@@ -1,0 +1,57 @@
+## .NET build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userprefs
+*.cache
+*.dbmdl
+*.dbproj.schemaview
+*.dbproj.user
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+## EF Core design-time artefacts (the committed Migrations/ folder stays;
+## these are throwaway compile-time outputs)
+**/Migrations/*.Designer.cs.bak
+
+## ASP.NET Core user secrets are stored outside the working tree
+## (%APPDATA%/Microsoft/UserSecrets) so nothing here, but guard anyway
+secrets.json
+appsettings.*.local.json
+*.pfx
+
+## Aspire
+**/AppHost/.aspire/
+
+## Claude Code session state (per-machine, not committed)
+.claude/
+
+## Computershare internal design docs — kept locally, not published
+RFC_DocProcessing_AI_updated.docx
+DocProcessing_C4_L3_updated.drawio
+DocProcessing-Build-Guide.md
+
+## OS junk
+Thumbs.db
+.DS_Store
+desktop.ini
+
+## Test/coverage output
+TestResults/
+coverage/
+*.coverage
+*.trx

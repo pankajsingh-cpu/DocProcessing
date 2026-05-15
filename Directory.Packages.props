@@ -1,0 +1,86 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup Label="Aspire / hosting">
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.3.0" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.3.0" />
+    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.3.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.5.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.5.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.7" />
+  </ItemGroup>
+  <ItemGroup Label="OpenTelemetry">
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.2" />
+  </ItemGroup>
+  <ItemGroup Label="Messaging">
+    <PackageVersion Include="MassTransit" Version="8.4.1" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
+    <PackageVersion Include="MassTransit.TestFramework" Version="8.4.1" />
+    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.4.1" />
+  </ItemGroup>
+  <ItemGroup Label="EF Core">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7" />
+    <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" Version="13.3.0" />
+  </ItemGroup>
+  <ItemGroup Label="Azure / Aspire clients">
+    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.3.0" />
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />
+  </ItemGroup>
+  <ItemGroup Label="Imaging">
+    <PackageVersion Include="Magick.NET-Q8-AnyCPU" Version="14.7.0" />
+  </ItemGroup>
+  <ItemGroup Label="Azure AI">
+    <PackageVersion Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
+  </ItemGroup>
+  <ItemGroup Label="Resilience">
+    <PackageVersion Include="Polly" Version="8.5.0" />
+  </ItemGroup>
+  <ItemGroup Label="Logging">
+    <PackageVersion Include="Serilog" Version="4.2.0" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="Serilog.Settings.Configuration" Version="9.0.0" />
+  </ItemGroup>
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.0" />
+    <PackageVersion Include="FluentAssertions" Version="7.2.0" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Testcontainers.Azurite" Version="4.0.0" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="4.0.0" />
+    <PackageVersion Include="Xunit.SkippableFact" Version="1.5.23" />
+  </ItemGroup>
+  <ItemGroup Label="Microsoft.Extensions.AI">
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.4.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.4.0" />
+    <PackageVersion Include="OpenAI" Version="2.9.1" />
+  </ItemGroup>
+  <ItemGroup Label="Microsoft.Agents.AI (MAF)">
+    <PackageVersion Include="Microsoft.Agents.AI" Version="1.1.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.OpenAI" Version="1.1.0" />
+  </ItemGroup>
+  <ItemGroup Label="Vector Data">
+    <PackageVersion Include="Microsoft.Extensions.VectorData.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.66.0-preview" />
+  </ItemGroup>
+  <ItemGroup Label="DI / Config (Common factories)">
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.7" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,5 @@
+{
+  "name": "drip_enrol",
+  "expectedIntents": ["drip_ocp"],
+  "ocrText": "--- PAGE 1 ---\nDividend Reinvestment Plan (DRIP) Enrolment Form\n\nHolder ID: 4455667788\nPlan type: DRIP\nAction: ENROL\nReinvest percentage: 100%\nEffective from: next dividend payment after 01 July 2026\n\nI authorise Computershare to apply all future cash dividends to the reinvestment of additional shares per the DRIP terms.\n\nSigned: P. Patel\nDate: 14 May 2026\n"
+}

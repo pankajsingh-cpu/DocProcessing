@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-DocProcessing.Ocr-1838186c-8a90-47c2-a373-311fe50c4817</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Azure.AI.DocumentIntelligence" />
+    <PackageReference Include="Polly" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DocProcessing.Common\DocProcessing.Common.csproj" />
+    <ProjectReference Include="..\DocProcessing.Contracts\DocProcessing.Contracts.csproj" />
+    <ProjectReference Include="..\DocProcessing.ServiceDefaults\DocProcessing.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>
