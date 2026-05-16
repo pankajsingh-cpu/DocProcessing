@@ -9,6 +9,7 @@ public sealed class LandingFolderWatcher : BackgroundService
     private readonly IBus _bus;
     private readonly WatcherOptions _opts;
     private readonly ILogger<LandingFolderWatcher> _logger;
+    private readonly HashSet<string> _extensions;
     private FileSystemWatcher? _fsw;
     private Debouncer<string>? _debouncer;
 
@@ -20,6 +21,7 @@ public sealed class LandingFolderWatcher : BackgroundService
         _bus = bus;
         _opts = opts.Value;
         _logger = logger;
+        _extensions = BuildExtensionSet(_opts.SupportedExtensions);
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -31,7 +33,10 @@ public sealed class LandingFolderWatcher : BackgroundService
             TimeSpan.FromMilliseconds(_opts.DebounceMs),
             PublishBatchArrived);
 
-        _fsw = new FileSystemWatcher(path, _opts.Filter)
+        // FileSystemWatcher only takes a single glob filter; we watch all files
+        // and filter by SupportedExtensions in OnEvent so we can accept both
+        // TIF/TIFF and PDF without two parallel watchers.
+        _fsw = new FileSystemWatcher(path)
         {
             IncludeSubdirectories = _opts.IncludeSubdirectories,
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size,
@@ -43,8 +48,8 @@ public sealed class LandingFolderWatcher : BackgroundService
         _fsw.Error += (_, e) => _logger.LogError(e.GetException(), "FileSystemWatcher error");
 
         _logger.LogInformation(
-            "Watching {Path} (filter={Filter}, debounce={DebounceMs}ms, recursive={Recursive})",
-            path, _opts.Filter, _opts.DebounceMs, _opts.IncludeSubdirectories);
+            "Watching {Path} (extensions={Extensions}, debounce={DebounceMs}ms, recursive={Recursive})",
+            path, string.Join(",", _extensions), _opts.DebounceMs, _opts.IncludeSubdirectories);
 
         return Task.Delay(Timeout.Infinite, stoppingToken);
     }
@@ -52,7 +57,27 @@ public sealed class LandingFolderWatcher : BackgroundService
     private void OnEvent(FileSystemEventArgs e)
     {
         if (e.ChangeType is WatcherChangeTypes.Deleted) return;
+        if (!IsSupported(e.FullPath)) return;
         _debouncer!.Trigger(e.FullPath);
+    }
+
+    private bool IsSupported(string fullPath)
+    {
+        var ext = Path.GetExtension(fullPath);
+        return !string.IsNullOrEmpty(ext) && _extensions.Contains(ext);
+    }
+
+    private static HashSet<string> BuildExtensionSet(IEnumerable<string> extensions)
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in extensions)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            var ext = raw.Trim();
+            if (!ext.StartsWith('.')) ext = "." + ext;
+            set.Add(ext);
+        }
+        return set;
     }
 
     private async Task PublishBatchArrived(string fullPath, CancellationToken ct)

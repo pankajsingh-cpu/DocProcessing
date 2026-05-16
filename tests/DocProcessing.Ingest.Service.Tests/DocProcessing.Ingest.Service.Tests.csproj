@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <NoWarn>$(NoWarn);NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +17,6 @@
     <PackageReference Include="MassTransit.TestFramework" />
     <PackageReference Include="Testcontainers.Azurite" />
     <PackageReference Include="Xunit.SkippableFact" />
-    <PackageReference Include="Magick.NET-Q8-AnyCPU" />
     <PackageReference Include="Azure.Storage.Blobs" />
   </ItemGroup>
 

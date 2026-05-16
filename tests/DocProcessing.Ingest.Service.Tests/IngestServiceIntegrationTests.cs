@@ -33,19 +33,19 @@ public class IngestServiceIntegrationTests : IAsyncLifetime
         if (_azurite is not null) await _azurite.DisposeAsync();
     }
 
-    [SkippableFact]
-    public async Task End_To_End_BatchArrived_Produces_Blobs_And_Events()
+    [SkippableTheory]
+    [InlineData(".tif")]
+    [InlineData(".pdf")]
+    public async Task End_To_End_BatchArrived_Uploads_Blob_And_Publishes_Event(string ext)
     {
         Skip.If(_dockerUnavailable, "Docker not available locally; skipping Testcontainers integration test.");
 
-        // Arrange: real Azurite + real splitter + real uploader, fake bus via test harness.
         var connectionString = _azurite!.GetConnectionString();
         var blobService = new BlobServiceClient(connectionString);
 
         await using var provider = new ServiceCollection()
             .AddLogging()
             .AddSingleton(blobService)
-            .AddSingleton<ITifSplitter, TifSplitter>()
             .AddSingleton<IBlobUploader, BlobUploader>()
             .AddSingleton(Options.Create(new IngestOptions
             {
@@ -58,9 +58,10 @@ public class IngestServiceIntegrationTests : IAsyncLifetime
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        // Write a 2-page TIF to disk that the consumer will open by path.
-        var tempPath = Path.Combine(Path.GetTempPath(), $"batch-{Guid.NewGuid():N}.tif");
-        await File.WriteAllBytesAsync(tempPath, TifFixtures.CreateMultiPageTif(2));
+        // Opaque bytes — ingest no longer parses files, only uploads them.
+        // Real PDFs/TIFs flow through the same code path.
+        var tempPath = Path.Combine(Path.GetTempPath(), $"batch-{Guid.NewGuid():N}{ext}");
+        await File.WriteAllBytesAsync(tempPath, [0xDE, 0xAD, 0xBE, 0xEF]);
 
         try
         {
@@ -72,18 +73,18 @@ public class IngestServiceIntegrationTests : IAsyncLifetime
             var consumerHarness = harness.GetConsumerHarness<BatchArrivedConsumer>();
             (await consumerHarness.Consumed.Any<BatchArrivedEvent>()).Should().BeTrue();
 
-            var ingested = await harness.Published
-                .SelectAsync<DocumentIngestedEvent>()
-                .ToListAsync();
-            ingested.Should().HaveCount(2);
+            var ingested = await harness.Published.SelectAsync<DocumentIngestedEvent>().ToListAsync();
+            ingested.Should().ContainSingle();
 
-            // Each blob path returned in the event should exist in Azurite.
+            var msg = ingested[0].Context.Message;
+            msg.BlobPath.Should().EndWith(ext);
+
             var container = blobService.GetBlobContainerClient("blobs");
-            foreach (var msg in ingested.Select(p => p.Context.Message))
-            {
-                var blob = container.GetBlobClient(msg.BlobPath);
-                (await blob.ExistsAsync()).Value.Should().BeTrue($"blob {msg.BlobPath} should exist after upload");
-            }
+            var blob = container.GetBlobClient(msg.BlobPath);
+            (await blob.ExistsAsync()).Value.Should().BeTrue($"blob {msg.BlobPath} should exist after upload");
+
+            var content = (await blob.DownloadContentAsync()).Value.Content.ToArray();
+            content.Should().Equal(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF });
         }
         finally
         {

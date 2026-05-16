@@ -19,7 +19,6 @@ builder.Services.AddOptions<IngestOptions>()
 // Aspire-injected blob client (connection name "blobs" matches AppHost.cs)
 builder.AddAzureBlobServiceClient("blobs");
 
-builder.Services.AddSingleton<ITifSplitter, TifSplitter>();
 builder.Services.AddSingleton<IBlobUploader, BlobUploader>();
 
 builder.Services.AddMassTransit(x =>

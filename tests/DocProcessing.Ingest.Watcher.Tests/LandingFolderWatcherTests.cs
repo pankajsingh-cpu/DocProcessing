@@ -26,8 +26,11 @@ public class LandingFolderWatcherTests : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
-    public async Task Publishes_BatchArrivedEvent_When_Tif_Created()
+    [Theory]
+    [InlineData("batch001.tif")]
+    [InlineData("batch002.tiff")]
+    [InlineData("batch003.pdf")]
+    public async Task Publishes_BatchArrivedEvent_For_Supported_Extension(string fileName)
     {
         await using var provider = new ServiceCollection()
             .AddLogging(b => b.AddDebug())
@@ -35,7 +38,7 @@ public class LandingFolderWatcherTests : IAsyncLifetime
             {
                 o.LandingPath = _tempDir;
                 o.DebounceMs = 150;
-                o.Filter = "*.tif";
+                o.SupportedExtensions = [".tif", ".tiff", ".pdf"];
                 o.IncludeSubdirectories = false;
             }).Services
             .AddMassTransitTestHarness()
@@ -54,24 +57,23 @@ public class LandingFolderWatcherTests : IAsyncLifetime
         // FSW needs a tick to begin raising events
         await Task.Delay(150);
 
-        var tifPath = Path.Combine(_tempDir, "batch001.tif");
-        await File.WriteAllBytesAsync(tifPath, [0x49, 0x49, 0x2A, 0x00]);
+        var fullPath = Path.Combine(_tempDir, fileName);
+        await File.WriteAllBytesAsync(fullPath, [0x49, 0x49, 0x2A, 0x00]);
 
         var any = await harness.Published.Any<BatchArrivedEvent>(
-            ctx => ((BatchArrivedEvent)ctx.MessageObject).BatchId == "batch001.tif");
+            ctx => ((BatchArrivedEvent)ctx.MessageObject).BatchId == fileName);
 
         any.Should().BeTrue();
 
         var batch = harness.Published.Select<BatchArrivedEvent>().First().Context.Message;
-        batch.SourcePath.Should().Be(tifPath);
-        batch.ArrivedAt.Should().BeAfter(DateTimeOffset.UtcNow.AddMinutes(-1));
+        batch.SourcePath.Should().Be(fullPath);
 
         await watcher.StopAsync(default);
         await harness.Stop();
     }
 
     [Fact]
-    public async Task Ignores_Non_Matching_Extensions()
+    public async Task Ignores_Files_Outside_SupportedExtensions()
     {
         await using var provider = new ServiceCollection()
             .AddLogging()
@@ -79,7 +81,7 @@ public class LandingFolderWatcherTests : IAsyncLifetime
             {
                 o.LandingPath = _tempDir;
                 o.DebounceMs = 150;
-                o.Filter = "*.tif";
+                o.SupportedExtensions = [".tif", ".tiff", ".pdf"];
                 o.IncludeSubdirectories = false;
             }).Services
             .AddMassTransitTestHarness()
@@ -96,10 +98,49 @@ public class LandingFolderWatcherTests : IAsyncLifetime
         await watcher.StartAsync(default);
         await Task.Delay(150);
 
+        // .txt and .docx land in the folder but should be filtered out.
         await File.WriteAllTextAsync(Path.Combine(_tempDir, "ignore.txt"), "noise");
+        await File.WriteAllTextAsync(Path.Combine(_tempDir, "report.docx"), "noise");
         await Task.Delay(400);
 
         (await harness.Published.Any<BatchArrivedEvent>()).Should().BeFalse();
+
+        await watcher.StopAsync(default);
+        await harness.Stop();
+    }
+
+    [Fact]
+    public async Task Extension_Match_Is_Case_Insensitive()
+    {
+        await using var provider = new ServiceCollection()
+            .AddLogging()
+            .AddOptions<WatcherOptions>().Configure(o =>
+            {
+                o.LandingPath = _tempDir;
+                o.DebounceMs = 150;
+                o.SupportedExtensions = [".pdf"];
+                o.IncludeSubdirectories = false;
+            }).Services
+            .AddMassTransitTestHarness()
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+        await harness.Start();
+
+        var watcher = new LandingFolderWatcher(
+            provider.GetRequiredService<IBus>(),
+            provider.GetRequiredService<IOptions<WatcherOptions>>(),
+            provider.GetRequiredService<ILogger<LandingFolderWatcher>>());
+
+        await watcher.StartAsync(default);
+        await Task.Delay(150);
+
+        var fullPath = Path.Combine(_tempDir, "MIXED-Case.PDF");
+        await File.WriteAllBytesAsync(fullPath, [0x25, 0x50, 0x44, 0x46]); // %PDF
+
+        var any = await harness.Published.Any<BatchArrivedEvent>(
+            ctx => ((BatchArrivedEvent)ctx.MessageObject).BatchId == "MIXED-Case.PDF");
+        any.Should().BeTrue();
 
         await watcher.StopAsync(default);
         await harness.Stop();

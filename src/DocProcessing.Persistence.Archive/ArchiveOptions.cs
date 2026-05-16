@@ -6,10 +6,8 @@ public sealed class ArchiveOptions
 
     public string ContainerName { get; set; } = "blobs";
 
-    // Prefix where the Ingest service deposits documents.
-    public string DocumentsPrefix { get; set; } = "documents";
-
-    // Prefix the archive copy lives under; date partitioning is appended.
+    // Prefix the archive copy lives under; date partitioning + the source's
+    // original extension are appended.
     public string ArchivePrefix { get; set; } = "archive";
 
     // Synchronous copy poll cadence — Azurite finishes the copy near-instantly,

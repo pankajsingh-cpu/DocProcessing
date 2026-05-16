@@ -23,10 +23,10 @@ public class DocumentSagaTests
 
     private sealed class RecordingArchive : IArchiveService
     {
-        public List<Guid> Archived { get; } = new();
-        public Task ArchiveAsync(Guid documentId, CancellationToken ct)
+        public List<(Guid DocumentId, string SourceBlobPath)> Archived { get; } = new();
+        public Task ArchiveAsync(Guid documentId, string sourceBlobPath, CancellationToken ct)
         {
-            Archived.Add(documentId);
+            Archived.Add((documentId, sourceBlobPath));
             return Task.CompletedTask;
         }
     }
@@ -124,7 +124,7 @@ public class DocumentSagaTests
         (await sagaHarness.Consumed.Any<ClassificationCompletedEvent>()).Should().BeTrue();
 
         persistence.Saved.Should().ContainSingle(e => e.DocumentId == docId);
-        archive.Archived.Should().Contain(docId);
+        archive.Archived.Should().ContainSingle(a => a.DocumentId == docId && a.SourceBlobPath == "documents/x.tif");
 
         // SetCompletedWhenFinalized removes the saga from the repo on Finalize().
         // ContainsInState(_, Persisted) should be null because instance is gone.

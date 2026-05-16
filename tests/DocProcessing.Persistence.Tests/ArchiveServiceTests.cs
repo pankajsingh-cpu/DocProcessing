@@ -30,8 +30,11 @@ public sealed class ArchiveServiceTests : IAsyncLifetime
         if (_azurite is not null) await _azurite.DisposeAsync();
     }
 
-    [SkippableFact]
-    public async Task ArchiveAsync_Copies_Source_Tif_To_Date_Partitioned_Archive_Path()
+    [SkippableTheory]
+    [InlineData(".tif")]
+    [InlineData(".tiff")]
+    [InlineData(".pdf")]
+    public async Task ArchiveAsync_Copies_Source_To_Date_Partitioned_Archive_Preserving_Extension(string ext)
     {
         Skip.If(_dockerUnavailable, "Docker not available");
 
@@ -40,7 +43,8 @@ public sealed class ArchiveServiceTests : IAsyncLifetime
         await container.CreateIfNotExistsAsync();
 
         var docId = Guid.NewGuid();
-        var source = container.GetBlobClient($"documents/{docId}.tif");
+        var sourcePath = $"documents/{docId}{ext}";
+        var source = container.GetBlobClient(sourcePath);
         await source.UploadAsync(BinaryData.FromBytes([0xDE, 0xAD, 0xBE, 0xEF]));
 
         // Pin the clock so the archive path is deterministic.
@@ -53,9 +57,9 @@ public sealed class ArchiveServiceTests : IAsyncLifetime
             timeProvider,
             NullLogger<ArchiveService>.Instance);
 
-        await service.ArchiveAsync(docId, default);
+        await service.ArchiveAsync(docId, sourcePath, default);
 
-        var archive = container.GetBlobClient($"archive/2026/05/{docId}.tif");
+        var archive = container.GetBlobClient($"archive/2026/05/{docId}{ext}");
         (await archive.ExistsAsync()).Value.Should().BeTrue();
 
         var sourceBytes = (await source.DownloadContentAsync()).Value.Content.ToArray();
@@ -80,13 +84,13 @@ public sealed class ArchiveServiceTests : IAsyncLifetime
             NullLogger<ArchiveService>.Instance);
 
         // Should not throw; saga still considers the document persisted.
-        await service.ArchiveAsync(docId, default);
+        await service.ArchiveAsync(docId, $"documents/{docId}.pdf", default);
 
         // Sanity: no archive blob was created.
         var anyArchive = false;
         await foreach (var item in container.GetBlobsAsync(prefix: "archive/"))
         {
-            if (item.Name.EndsWith($"{docId}.tif"))
+            if (item.Name.Contains(docId.ToString()))
             {
                 anyArchive = true;
                 break;
@@ -105,8 +109,9 @@ public sealed class ArchiveServiceTests : IAsyncLifetime
         await container.CreateIfNotExistsAsync();
 
         var docId = Guid.NewGuid();
-        await container.GetBlobClient($"documents/{docId}.tif")
-            .UploadAsync(BinaryData.FromBytes([0x01, 0x02]));
+        var sourcePath = $"documents/{docId}.pdf";
+        await container.GetBlobClient(sourcePath)
+            .UploadAsync(BinaryData.FromBytes([0x25, 0x50, 0x44, 0x46])); // "%PDF"
 
         var fixedNow = new DateTimeOffset(2026, 5, 14, 9, 0, 0, TimeSpan.Zero);
         var timeProvider = new FakeTimeProvider(fixedNow);
@@ -116,11 +121,27 @@ public sealed class ArchiveServiceTests : IAsyncLifetime
             timeProvider,
             NullLogger<ArchiveService>.Instance);
 
-        await service.ArchiveAsync(docId, default);
-        await service.ArchiveAsync(docId, default);   // second call must be a no-op, not a failure
+        await service.ArchiveAsync(docId, sourcePath, default);
+        await service.ArchiveAsync(docId, sourcePath, default);   // second call must be a no-op
 
-        var archive = container.GetBlobClient($"archive/2026/05/{docId}.tif");
+        var archive = container.GetBlobClient($"archive/2026/05/{docId}.pdf");
         (await archive.ExistsAsync()).Value.Should().BeTrue();
+    }
+
+    [SkippableFact]
+    public async Task ArchiveAsync_Throws_On_Empty_SourceBlobPath()
+    {
+        Skip.If(_dockerUnavailable, "Docker not available");
+
+        var blobService = new BlobServiceClient(_azurite!.GetConnectionString());
+        var service = new ArchiveService(
+            blobService,
+            Options.Create(new ArchiveOptions()),
+            TimeProvider.System,
+            NullLogger<ArchiveService>.Instance);
+
+        await FluentActions.Awaiting(() => service.ArchiveAsync(Guid.NewGuid(), "", default))
+            .Should().ThrowAsync<ArgumentException>();
     }
 
     // Minimal TimeProvider for tests — System.TimeProvider is abstract, so we

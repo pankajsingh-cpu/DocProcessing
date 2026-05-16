@@ -14,27 +14,33 @@ public sealed class ArchiveService(
 {
     private readonly ArchiveOptions _options = options.Value;
 
-    public async Task ArchiveAsync(Guid documentId, CancellationToken ct)
+    public async Task ArchiveAsync(Guid documentId, string sourceBlobPath, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(sourceBlobPath))
+        {
+            throw new ArgumentException("Source blob path is required.", nameof(sourceBlobPath));
+        }
+
         var container = blobService.GetBlobContainerClient(_options.ContainerName);
         await container.CreateIfNotExistsAsync(cancellationToken: ct);
 
-        var sourcePath = $"{_options.DocumentsPrefix.TrimEnd('/')}/{documentId}.tif";
-        var source = container.GetBlobClient(sourcePath);
+        var source = container.GetBlobClient(sourceBlobPath);
 
         if (!await source.ExistsAsync(ct))
         {
-            // We log a warning instead of throwing: the source TIF may legitimately
+            // We log a warning instead of throwing: the source blob may legitimately
             // be missing in dev (stub OCR runs skip the ingest stage). The saga
             // still considers the document persisted — the SQL row is authoritative.
             logger.LogWarning(
                 "Archive skipped: source blob {Source} does not exist for {DocumentId}",
-                sourcePath, documentId);
+                sourceBlobPath, documentId);
             return;
         }
 
+        // Preserve the original file extension (.tif, .tiff, .pdf, ...).
+        var ext = Path.GetExtension(sourceBlobPath);
         var now = timeProvider.GetUtcNow();
-        var destPath = $"{_options.ArchivePrefix.TrimEnd('/')}/{now:yyyy}/{now:MM}/{documentId}.tif";
+        var destPath = $"{_options.ArchivePrefix.TrimEnd('/')}/{now:yyyy}/{now:MM}/{documentId}{ext}";
         var destination = container.GetBlobClient(destPath);
 
         if (await destination.ExistsAsync(ct))
@@ -57,7 +63,7 @@ public sealed class ArchiveService(
                 case CopyStatus.Success:
                     logger.LogInformation(
                         "Archived {DocumentId}: {Source} -> {Destination}",
-                        documentId, sourcePath, destPath);
+                        documentId, sourceBlobPath, destPath);
                     return;
                 case CopyStatus.Failed:
                 case CopyStatus.Aborted:

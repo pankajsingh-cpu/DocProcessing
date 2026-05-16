@@ -91,7 +91,13 @@ public class DocumentSaga : MassTransitStateMachine<DocumentSagaState>
         var archive = sp.GetRequiredService<IArchiveService>();
 
         await persistence.SaveClassificationAsync(ctx.Message, ctx.CancellationToken);
-        await archive.ArchiveAsync(ctx.Message.DocumentId, ctx.CancellationToken);
+
+        // SourceBlobPath was stashed on Ingested. It already carries the right
+        // extension (.tif/.tiff/.pdf) — archive uses it to derive the destination.
+        var sourceBlobPath = ctx.Saga.SourceBlobPath
+            ?? throw new InvalidOperationException(
+                $"Saga {ctx.Saga.CorrelationId} has no SourceBlobPath; ingest never recorded one.");
+        await archive.ArchiveAsync(ctx.Message.DocumentId, sourceBlobPath, ctx.CancellationToken);
 
         ctx.Saga.CompletedAt = ctx.Message.CompletedAt;
 

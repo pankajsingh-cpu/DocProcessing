@@ -42,7 +42,7 @@ public sealed class DocProcessingActivitiesTests
 
     private sealed class FakeArchive : DocProcessing.Common.Persistence.IArchiveService
     {
-        public Task ArchiveAsync(Guid documentId, CancellationToken ct) => Task.CompletedTask;
+        public Task ArchiveAsync(Guid documentId, string sourceBlobPath, CancellationToken ct) => Task.CompletedTask;
     }
 
     private static ServiceProvider BuildHarnessProvider() =>
@@ -75,11 +75,14 @@ public sealed class DocProcessingActivitiesTests
 
         await harness.Stop();
 
+        // Filter by docId — xUnit runs test classes concurrently and the
+        // listener is process-global, so other tests' activities also flow
+        // into capture.Stopped.
         var startActivity = capture.Stopped
-            .SingleOrDefault(a => a.OperationName == DocProcessingActivities.ProcessStartName);
+            .Where(a => a.OperationName == DocProcessingActivities.ProcessStartName)
+            .SingleOrDefault(a => a.GetTagItem(DocProcessingActivities.DocumentIdTag) is Guid g && g == docId);
         startActivity.Should().NotBeNull("Ingested transition must emit document.process");
-        startActivity!.GetTagItem(DocProcessingActivities.DocumentIdTag).Should().Be(docId);
-        startActivity.GetTagItem(DocProcessingActivities.BatchIdTag).Should().Be("batch-42");
+        startActivity!.GetTagItem(DocProcessingActivities.BatchIdTag).Should().Be("batch-42");
     }
 
     [Fact]
@@ -112,7 +115,7 @@ public sealed class DocProcessingActivitiesTests
         var completion = capture.Stopped
             .SingleOrDefault(a =>
                 a.OperationName == DocProcessingActivities.ProcessCompletedName &&
-                (Guid?)a.GetTagItem(DocProcessingActivities.DocumentIdTag) == docId);
+                a.GetTagItem(DocProcessingActivities.DocumentIdTag) is Guid g && g == docId);
         completion.Should().NotBeNull("Persisted transition must emit document.process.completed");
         completion!.GetTagItem(DocProcessingActivities.OutcomeTag).Should().Be("success");
         completion.Status.Should().Be(ActivityStatusCode.Ok);
@@ -143,7 +146,7 @@ public sealed class DocProcessingActivitiesTests
         var completion = capture.Stopped
             .SingleOrDefault(a =>
                 a.OperationName == DocProcessingActivities.ProcessCompletedName &&
-                (Guid?)a.GetTagItem(DocProcessingActivities.DocumentIdTag) == docId);
+                a.GetTagItem(DocProcessingActivities.DocumentIdTag) is Guid g && g == docId);
         completion.Should().NotBeNull("DocFailed must emit document.process.completed");
         completion!.GetTagItem(DocProcessingActivities.OutcomeTag).Should().Be("failed");
         completion.GetTagItem(DocProcessingActivities.FailureStageTag).Should().Be("rate-limited");

@@ -32,7 +32,7 @@ public sealed class DocumentIdLogScopeFilterTests
 
     private sealed class FakeArchive : DocProcessing.Common.Persistence.IArchiveService
     {
-        public Task ArchiveAsync(Guid documentId, CancellationToken ct) => Task.CompletedTask;
+        public Task ArchiveAsync(Guid documentId, string sourceBlobPath, CancellationToken ct) => Task.CompletedTask;
     }
 
     [Fact]
