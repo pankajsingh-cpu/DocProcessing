@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DocProcessing.Contracts.Events;
 using DocProcessing.Persistence.Sql;
 using Microsoft.EntityFrameworkCore;
@@ -31,41 +32,44 @@ public sealed class PersistenceServiceTests : IAsyncLifetime
     }
 
     [SkippableFact]
-    public async Task SaveClassificationAsync_Picks_Highest_Confidence_As_TransactionType_And_Merges_Fields()
+    public async Task SaveClassificationAsync_Picks_Highest_Confidence_And_Stores_Top_Payload()
     {
         Skip.If(_dockerUnavailable, "Docker not available");
 
         await using var db = await CreateAndMigrateContext();
         var service = new PersistenceService(db, NullLogger<PersistenceService>.Instance);
 
+        var dripPayload = JsonDocument.Parse("""
+            {"transaction_type":"drip_ocp","holder":{"holder_id":"111"},"extracted":{"amount_number":"150.00"}}
+            """).RootElement;
+        var sellPayload = JsonDocument.Parse("""
+            {"transaction_type":"sell_stock","sale":[{"holder_name":"M. O'Reilly","account_number":"9988"}]}
+            """).RootElement;
+
         var docId = Guid.NewGuid();
         var evt = new ClassificationCompletedEvent(
             docId,
             Intents:
             [
-                new IntentResult("change_of_address", [1], 0.65, new Dictionary<string, string?>
-                {
-                    ["holder_id"] = "111",
-                    ["effective_date"] = "2026-06-01",
-                }),
-                new IntentResult("bereavement", [1], 0.92, new Dictionary<string, string?>
-                {
-                    ["holder_id"] = "222",   // higher-confidence overrides
-                    ["date_of_death"] = "2026-04-20",
-                }),
+                new IntentResult("drip_ocp",   0.65, dripPayload),
+                new IntentResult("sell_stock", 0.92, sellPayload),   // higher confidence wins
             ],
             CompletedAt: DateTimeOffset.UtcNow);
 
         await service.SaveClassificationAsync(evt, default);
 
         var row = await db.ClassificationRecords.SingleAsync(r => r.DocumentId == docId);
-        row.TransactionType.Should().Be("bereavement");
+        row.TransactionType.Should().Be("sell_stock");
         row.Confidence.Should().BeApproximately(0.92, 0.001);
 
-        row.Intents.Should().Contain("change_of_address").And.Contain("bereavement");
-        row.ExtractedFields.Should().Contain("\"holder_id\":\"222\"");          // bereavement wins
-        row.ExtractedFields.Should().Contain("\"effective_date\":\"2026-06-01\"");
-        row.ExtractedFields.Should().Contain("\"date_of_death\":\"2026-04-20\"");
+        // Intents column carries the full list including both candidates.
+        row.Intents.Should().Contain("drip_ocp").And.Contain("sell_stock");
+
+        // ExtractedFields column holds the top intent's payload verbatim
+        // (now the typed sell_stock shape, not a merged flat dict).
+        row.ExtractedFields.Should().Contain("\"transaction_type\":\"sell_stock\"");
+        row.ExtractedFields.Should().Contain("\"holder_name\":\"M. O'Reilly\"");
+        row.ExtractedFields.Should().NotContain("drip_ocp");
     }
 
     [SkippableFact]
@@ -80,21 +84,21 @@ public sealed class PersistenceServiceTests : IAsyncLifetime
 
         await service.SaveClassificationAsync(new ClassificationCompletedEvent(
             docId,
-            [new IntentResult("deposit_cheque", [1], 0.5, new Dictionary<string, string?>())],
+            [new IntentResult("drip_ocp", 0.5,
+                JsonDocument.Parse("""{"transaction_type":"drip_ocp"}""").RootElement)],
             DateTimeOffset.UtcNow), default);
 
         // Re-publish (saga retry) with a refined classification.
         await service.SaveClassificationAsync(new ClassificationCompletedEvent(
             docId,
-            [new IntentResult("buy_sell_shares", [1], 0.88, new Dictionary<string, string?>
-            {
-                ["holder_id"] = "333",
-            })],
+            [new IntentResult("sell_stock", 0.88,
+                JsonDocument.Parse("""{"transaction_type":"sell_stock","sale":[{"account_number":"333"}]}""").RootElement)],
             DateTimeOffset.UtcNow), default);
 
         var rows = await db.ClassificationRecords.Where(r => r.DocumentId == docId).ToListAsync();
         rows.Should().ContainSingle();
-        rows[0].TransactionType.Should().Be("buy_sell_shares");
+        rows[0].TransactionType.Should().Be("sell_stock");
+        rows[0].ExtractedFields.Should().Contain("\"account_number\":\"333\"");
     }
 
     private async Task<PersistenceDbContext> CreateAndMigrateContext()

@@ -117,7 +117,10 @@ public class DocumentSagaTests
 
         var classification = new ClassificationCompletedEvent(
             docId,
-            Intents: [new IntentResult("change_of_address", [1], 0.95, new Dictionary<string, string?>())],
+            Intents: [new IntentResult(
+                IntentName: "drip_ocp",
+                Confidence: 0.95,
+                Payload: System.Text.Json.JsonDocument.Parse("""{"transaction_type":"drip_ocp"}""").RootElement)],
             CompletedAt: DateTimeOffset.UtcNow);
 
         await harness.Bus.Publish(classification);

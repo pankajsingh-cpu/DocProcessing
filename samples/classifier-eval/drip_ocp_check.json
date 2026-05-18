@@ -1,0 +1,5 @@
+{
+  "name": "drip_ocp_check",
+  "expectedIntents": ["drip_ocp"],
+  "ocrText": "--- PAGE 1 ---\nCompany: ACME Holdings PLC (Code: ACME)\nHolder: P. Patel (Holder ID: 4455667788)\n\nOptional Cash Purchase / Dividend Reinvestment\n\nPay to the order of: Computershare Trust Company\nDate: 14 May 2026\nAmount (numeric): $250.00\nAmount (written): Two hundred fifty dollars and 00/100\nABA / Routing: 021000021\nAccount #: 12345678901\nCheque #: 003421\nMemo: ACME DRIP Q2 2026 reinvest\n\nSigned: P. Patel\n"
+}

@@ -11,6 +11,9 @@ namespace DocProcessing.Embeddings;
 // and upserts it into the "intents" collection. Embeddings are computed once
 // per process start — a handful of intents fits comfortably inside GitHub
 // Models' embedding rate limits.
+//
+// The payload_template from each seed entry is stored verbatim as a JSON
+// string so the classifier can hand it back to the LLM as a fill-in template.
 public sealed class IntentKnowledgeBaseSeeder(
     VectorStoreCollection<string, IntentRecord> collection,
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
@@ -20,6 +23,11 @@ public sealed class IntentKnowledgeBaseSeeder(
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
+    };
+
+    private static readonly JsonSerializerOptions TemplateSerializeOptions = new()
+    {
+        WriteIndented = false,
     };
 
     private readonly KnowledgeBaseOptions _opts = opts.Value;
@@ -52,8 +60,7 @@ public sealed class IntentKnowledgeBaseSeeder(
                 Name = seed.Name,
                 Definition = seed.Definition,
                 Keywords = seed.Keywords,
-                RequiredFields = seed.RequiredFields,
-                OptionalFields = seed.OptionalFields,
+                PayloadTemplateJson = JsonSerializer.Serialize(seed.PayloadTemplate, TemplateSerializeOptions),
                 Vector = embedding.Vector,
             };
 

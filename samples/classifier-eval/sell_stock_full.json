@@ -1,0 +1,5 @@
+{
+  "name": "sell_stock_full",
+  "expectedIntents": ["sell_stock"],
+  "ocrText": "--- PAGE 1 ---\nSale Instruction Form (SI-2024)\n\nHolder name: Margaret O'Reilly\nHolder address: 7 Crescent View, Edinburgh EH3 9JL, UK\nAccount number: 9988776655\nCompany: Globex Industries PLC (Code: GLBX)\n\n[X] Sell ALL my shares in this account\n[ ] Sell partial:_____ shares\n\n[X] Withdraw ALL reinvested dividend balance\n\nMedallion Guarantee Number: M-2026-1188\nSignature 1: M. O'Reilly\nSignature 2: (joint holder N/A)\n\nDate: 13 May 2026\n"
+}

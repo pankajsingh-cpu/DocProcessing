@@ -10,7 +10,9 @@ namespace DocProcessing.Classifier.Tests;
 public sealed class IntentClassifierTests
 {
     private const string ValidJson =
-        """{"intents":[{"intent":"change_of_address","pages":[1],"confidence":0.92,"extractedFields":{"holder_id":"1234567890"}}]}""";
+        """
+        {"intents":[{"intent":"drip_ocp","confidence":0.92,"payload":{"transaction_type":"drip_ocp","holder":{"holder_id":"1234567890","holder_name":"P. Patel"},"extracted":{"amount_number":"250.00","check_number":"003421","signature":true}}}]}
+        """;
 
     [Fact]
     public async Task ClassifyAsync_Parses_Valid_Json_From_Agent()
@@ -21,9 +23,14 @@ public sealed class IntentClassifierTests
         var result = await classifier.ClassifyAsync("Some OCR text");
 
         result.Intents.Should().HaveCount(1);
-        result.Intents[0].Intent.Should().Be("change_of_address");
+        result.Intents[0].Intent.Should().Be("drip_ocp");
         result.Intents[0].Confidence.Should().BeApproximately(0.92, 0.001);
-        result.Intents[0].ExtractedFields["holder_id"].Should().Be("1234567890");
+
+        var payload = result.Intents[0].Payload;
+        payload.GetProperty("transaction_type").GetString().Should().Be("drip_ocp");
+        payload.GetProperty("holder").GetProperty("holder_id").GetString().Should().Be("1234567890");
+        payload.GetProperty("extracted").GetProperty("signature").GetBoolean().Should().BeTrue();
+
         chat.Calls.Should().HaveCount(1);
     }
 
@@ -38,20 +45,20 @@ public sealed class IntentClassifierTests
 
         var result = await classifier.ClassifyAsync("Some OCR text");
 
-        result.Intents[0].Intent.Should().Be("change_of_address");
+        result.Intents[0].Intent.Should().Be("drip_ocp");
     }
 
     [Fact]
     public async Task ClassifyAsync_Retries_With_Reformat_Prompt_On_Non_Json()
     {
         var chat = FakeChatClient.WithTexts(
-            "Sure, here you go — this looks like a change of address.",  // prose, no JSON
+            "Sure, here you go — this looks like a DRIP payment.",  // prose, no JSON
             ValidJson);
         var classifier = BuildClassifier(chat);
 
         var result = await classifier.ClassifyAsync("Some OCR text");
 
-        result.Intents[0].Intent.Should().Be("change_of_address");
+        result.Intents[0].Intent.Should().Be("drip_ocp");
         chat.Calls.Should().HaveCount(2);
 
         var secondTurn = chat.Calls[1].Last();
@@ -63,7 +70,7 @@ public sealed class IntentClassifierTests
     public async Task ClassifyAsync_Throws_Json_Exception_When_Reformat_Also_Fails()
     {
         var chat = FakeChatClient.WithTexts(
-            "I think this is change of address",
+            "I think this is a sell stock instruction",
             "Still prose, no JSON here");
         var classifier = BuildClassifier(chat);
 

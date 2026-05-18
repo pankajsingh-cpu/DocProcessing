@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.VectorData;
@@ -48,10 +49,23 @@ public sealed class IntentKnowledgeBase(
             return null;
         }
 
+        JsonElement template;
+        try
+        {
+            using var doc = JsonDocument.Parse(record.PayloadTemplateJson);
+            template = doc.RootElement.Clone();
+        }
+        catch (JsonException ex)
+        {
+            logger.LogError(ex,
+                "Stored payload_template for intent {IntentName} is not valid JSON; returning empty object",
+                intentName);
+            template = JsonDocument.Parse("{}").RootElement.Clone();
+        }
+
         return new IntentSchema(
             Name: record.Name,
             Definition: record.Definition,
-            RequiredFields: record.RequiredFields,
-            OptionalFields: record.OptionalFields);
+            PayloadTemplate: template);
     }
 }

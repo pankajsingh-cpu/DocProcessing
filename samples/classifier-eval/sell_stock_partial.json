@@ -1,0 +1,5 @@
+{
+  "name": "sell_stock_partial",
+  "expectedIntents": ["sell_stock"],
+  "ocrText": "--- PAGE 1 ---\nSale Instruction\n\nHolder: R. Brown\nAccount #: 1122334455\nCompany: ACME Holdings PLC (ACME)\n\nPartial sale: 500 shares\nDeposit certificate shares: 1500 shares to be held\n\nMedallion: none provided\nSignature: R. Brown\n"
+}

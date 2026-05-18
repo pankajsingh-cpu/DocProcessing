@@ -106,7 +106,10 @@ public sealed class DocProcessingActivitiesTests
 
         await harness.Bus.Publish(new ClassificationCompletedEvent(
             docId,
-            [new IntentResult("change_of_address", [1], 0.9, new Dictionary<string, string?>())],
+            [new IntentResult(
+                IntentName: "drip_ocp",
+                Confidence: 0.9,
+                Payload: System.Text.Json.JsonDocument.Parse("""{"transaction_type":"drip_ocp"}""").RootElement)],
             DateTimeOffset.UtcNow));
         (await sagaHarness.Consumed.Any<ClassificationCompletedEvent>()).Should().BeTrue();
 

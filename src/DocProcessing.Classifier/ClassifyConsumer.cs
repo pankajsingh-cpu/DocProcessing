@@ -37,9 +37,8 @@ public sealed class ClassifyConsumer(
             var intents = output.Intents
                 .Select(i => new IntentResult(
                     IntentName: i.Intent,
-                    Pages: i.Pages ?? Array.Empty<int>(),
                     Confidence: i.Confidence,
-                    ExtractedFields: i.ExtractedFields ?? new Dictionary<string, string?>()))
+                    Payload: i.Payload))
                 .ToList();
 
             await ctx.Publish(new ClassificationCompletedEvent(

@@ -13,8 +13,18 @@ public sealed class PersistenceService(
 {
     public async Task SaveClassificationAsync(ClassificationCompletedEvent evt, CancellationToken ct)
     {
-        var (transactionType, confidence) = ChooseHeadlineIntent(evt.Intents);
-        var extractedFields = MergeExtractedFields(evt.Intents);
+        var top = ChooseHeadlineIntent(evt.Intents);
+        var transactionType = top?.IntentName ?? "unknown";
+        var confidence = top?.Confidence ?? 0d;
+
+        // ExtractedFields column holds the top-confidence intent's typed
+        // payload JSON verbatim (drip_ocp / sell_stock shape, etc.). The
+        // Intents column carries the full list including all candidates.
+        var topPayloadJson = top is null
+            ? "{}"
+            : JsonSerializer.Serialize(top.Payload, JsonOpts.StrictCamelCase);
+
+        var intentsJson = JsonSerializer.Serialize(evt.Intents, JsonOpts.StrictCamelCase);
 
         var existing = await db.ClassificationRecords.FindAsync(new object?[] { evt.DocumentId }, ct);
         if (existing is null)
@@ -25,8 +35,8 @@ public sealed class PersistenceService(
                 TransactionType = transactionType,
                 Confidence = confidence,
                 CreatedDate = evt.CompletedAt,
-                Intents = JsonSerializer.Serialize(evt.Intents, JsonOpts.StrictCamelCase),
-                ExtractedFields = JsonSerializer.Serialize(extractedFields, JsonOpts.StrictCamelCase),
+                Intents = intentsJson,
+                ExtractedFields = topPayloadJson,
             });
         }
         else
@@ -36,8 +46,8 @@ public sealed class PersistenceService(
             existing.TransactionType = transactionType;
             existing.Confidence = confidence;
             existing.CreatedDate = evt.CompletedAt;
-            existing.Intents = JsonSerializer.Serialize(evt.Intents, JsonOpts.StrictCamelCase);
-            existing.ExtractedFields = JsonSerializer.Serialize(extractedFields, JsonOpts.StrictCamelCase);
+            existing.Intents = intentsJson;
+            existing.ExtractedFields = topPayloadJson;
         }
 
         await db.SaveChangesAsync(ct);
@@ -46,29 +56,6 @@ public sealed class PersistenceService(
             evt.DocumentId, transactionType, confidence);
     }
 
-    private static (string TransactionType, double Confidence) ChooseHeadlineIntent(
-        IReadOnlyList<IntentResult> intents)
-    {
-        if (intents.Count == 0)
-        {
-            return ("unknown", 0d);
-        }
-
-        var top = intents.OrderByDescending(i => i.Confidence).First();
-        return (top.IntentName, top.Confidence);
-    }
-
-    private static IDictionary<string, string?> MergeExtractedFields(IReadOnlyList<IntentResult> intents)
-    {
-        // Higher-confidence intents win on overlapping keys.
-        var merged = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var intent in intents.OrderBy(i => i.Confidence))
-        {
-            foreach (var (key, value) in intent.ExtractedFields)
-            {
-                merged[key] = value;
-            }
-        }
-        return merged;
-    }
+    private static IntentResult? ChooseHeadlineIntent(IReadOnlyList<IntentResult> intents) =>
+        intents.Count == 0 ? null : intents.OrderByDescending(i => i.Confidence).First();
 }
