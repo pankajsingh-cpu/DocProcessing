@@ -29,7 +29,7 @@ public sealed class ClassifierEvalTests(ITestOutputHelper output)
 
         var repoRoot = ResolveRepoRoot();
         var fixturesDir = Path.Combine(repoRoot, "samples", "classifier-eval");
-        var seedPath = Path.Combine(repoRoot, "samples", "intent-kb-seed.json");
+        var seedPath = Path.Combine(repoRoot, "samples", "kb");
 
         var fixtures = await LoadFixtures(fixturesDir);
         fixtures.Should().NotBeEmpty("eval requires at least one fixture under samples/classifier-eval/");

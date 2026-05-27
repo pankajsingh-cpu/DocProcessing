@@ -1,0 +1,85 @@
+{
+  "name": "drip_ocp",
+  "definition": "Optional Cash Purchase (DripOCP): a voluntary cash purchase submitted by a registered holder by physical cheque for investment into their dividend reinvestment / optional cash purchase plan. Applies to both common-stock contributions and employee-class (ESPP) contributions. The submission is a cheque (often with an accompanying stub, memo line or covering note) made payable to Computershare or to the client. An operator validates the cheque, determines the deposit amount and whether it is a split cheque, and applies the funds as a SCRIP bulk purchase ('Optional Cash Purchase' for common stock, 'ESPP Optional Cash Purchase' for employee contributions). Distinguishing signal is often implicit: the document is a bank cheque rather than a form, so cheque-anatomy cues carry the intent.",
+  "keywords": [
+    "optional cash purchase",
+    "OCP",
+    "DripOCP",
+    "DRIP",
+    "dividend reinvestment plan",
+    "voluntary cash purchase",
+    "voluntary contribution",
+    "ESPP optional cash purchase",
+    "employee stock purchase plan",
+    "SCRIP bulk",
+    "bulk type OP",
+    "split check",
+    "cheque",
+    "check",
+    "pay to the order of",
+    "payable to Computershare",
+    "legal line",
+    "numeric line",
+    "memo line",
+    "ABA routing",
+    "holder name pre-printed",
+    "deposit amount",
+    "plan election"
+  ],
+  "required_fields": [
+    "holder_id",
+    "deposit_amount",
+    "check_number",
+    "bulk_type",
+    "split_check_flag"
+  ],
+  "optional_fields": [
+    "total_check_amount",
+    "company_code",
+    "plan_type",
+    "contribution_class",
+    "bulk_trade_date",
+    "check_date",
+    "payee",
+    "effective_date"
+  ],
+  "reject_rules": [
+    {
+      "condition": "bulk_trade_date is 35 or more days away",
+      "action": "reject",
+      "reason": "Cheque must be returned to submitter with a reject letter instructing resubmission."
+    },
+    {
+      "condition": "deposit_amount below the company voluntary purchase minimum (example threshold USD 50)",
+      "action": "reject",
+      "reason": "Under the minimum voluntary investment amount. Threshold varies per company."
+    },
+    {
+      "condition": "deposit_amount below the minimum initial investment (example threshold USD 1000) where initial investment not yet met",
+      "action": "reject",
+      "reason": "Under the minimum initial investment amount."
+    },
+    {
+      "condition": "plan_type == 'CIP'",
+      "action": "reject",
+      "reason": "CIP plans are electronic-only; physical cheques are not accepted and must be returned."
+    },
+    {
+      "condition": "company_code == 'PEP' (PEPSICO) with restriction warning present",
+      "action": "review",
+      "reason": "Certain PEPSICO accounts are restricted from DRIP participation; check Warnings field before processing."
+    },
+    {
+      "condition": "cheque fails validity checks (holder name not pre-printed, not signed by named holder, stale-dated, not payable to Computershare or client, legal line does not match numeric line)",
+      "action": "reject",
+      "reason": "Cheque is not valid for processing."
+    }
+  ],
+  "_provenance": {
+    "source_document": "DripOCP_DOP.docx",
+    "source_type": "Desktop Operating Procedure (DOP)",
+    "owning_team": "Transaction Services / Cash Department",
+    "region": "US",
+    "notes": "Thresholds (USD 50 / USD 1000), intranet references and onshore/offshore queue names are US-team specifics. Validate currency and minimums before reuse for a UK/EMEA registry."
+  }
+}

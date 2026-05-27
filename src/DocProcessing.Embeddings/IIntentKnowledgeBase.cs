@@ -10,7 +10,7 @@ namespace DocProcessing.Embeddings;
 // the MAF tool surface; AIFunctionFactory reads them when registering
 // search_intent_kb and get_intent_schema.
 [Description("Knowledge base of Computershare backoffice transaction types. " +
-             "Use to look up which transaction types could apply to OCR text and to fetch their JSON payload templates.")]
+             "Use to look up which transaction types could apply to OCR text and to fetch their field schema and business rules.")]
 public interface IIntentKnowledgeBase
 {
     [Description("Hybrid-search the intent knowledge base by free-text query " +
@@ -24,11 +24,11 @@ public interface IIntentKnowledgeBase
         int top = 3,
         CancellationToken cancellationToken = default);
 
-    [Description("Returns the JSON payload template for a named intent — the exact shape " +
-                 "the classifier output must match for that transaction type. " +
-                 "Call AFTER SearchAsync once an intent name has been chosen, to learn what fields to extract " +
-                 "and how to nest them. Fill the template's null/empty values with data extracted from the OCR text; " +
-                 "leave fields you cannot find as null.")]
+    [Description("Returns the field schema and reject_rules for a named intent — the required and optional " +
+                 "snake_case fields the classifier should extract, plus the business rules an operator would " +
+                 "apply to decide whether the document is processable. " +
+                 "Call AFTER SearchAsync once an intent name has been chosen. Build the payload from the field " +
+                 "lists; surface any rule whose condition matches the document in payload.alerts.")]
     Task<IntentSchema?> GetSchemaAsync(
         [Description("The intent name as returned by SearchAsync. Must match exactly (case-sensitive, snake_case).")]
         string intentName,

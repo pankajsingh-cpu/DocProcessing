@@ -63,7 +63,11 @@ builder.Services.AddMassTransit(x =>
         cfg.UseDocProcDocumentIdLogScope(ctx);
         cfg.Host(builder.Configuration.GetConnectionString("messaging")
             ?? throw new InvalidOperationException("Connection string 'messaging' not found"));
-        cfg.ConfigureEndpoints(ctx);
+
+        // Explicit queue name to match the saga's .Send(new Uri("queue:ocr"), ...).
+        // Auto-naming via ConfigureEndpoints would produce "RunOcr" and the
+        // saga's command would land on an unbound queue.
+        cfg.ReceiveEndpoint("ocr", e => e.ConfigureConsumer<RunOcrConsumer>(ctx));
     });
 });
 

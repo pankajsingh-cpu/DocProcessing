@@ -1,0 +1,10 @@
+{
+  "modelId": "stub-prebuilt-layout",
+  "apiVersion": "stub",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "content": "JANE M PATEL                                                       003421\n123 OAK STREET\nSPRINGFIELD IL 62704\n\n                                                            DATE  03/14/2026\n\nPAY TO THE\nORDER OF   Computershare                                $  250.00\n\nTwo hundred fifty and 00/100 ......................................................... DOLLARS\n\nFIRST NATIONAL BANK\nSpringfield, Illinois\n\nMEMO  DRIP OCP - Optional Cash Purchase - Holder C-12345678 - Acct C-0042118899\n\n|: 071000013 |:  0123456789 ||  003421\n\nSignature: J. Patel"
+    }
+  ]
+}

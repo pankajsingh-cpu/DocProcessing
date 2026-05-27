@@ -5,10 +5,10 @@ namespace DocProcessing.Embeddings;
 // Vector store record for an intent. Both the KB worker and the Classifier
 // worker register their own in-process vector store via AddIntentKnowledgeBase.
 //
-// The PayloadTemplateJson column stores the per-intent JSON shape verbatim —
-// the LLM uses it as a template when producing classifier output. Stored as a
-// string because the InMemoryVectorStore (and Azure AI Search) work with
-// primitive types, not JsonElement.
+// RequiredFields / OptionalFields are the snake_case field names the classifier
+// should attempt to extract — they become keys in the emitted payload.
+// RejectRulesJson stores the rule list verbatim as a JSON string because the
+// vector store works with primitive types, not complex object arrays.
 //
 // text-embedding-3-small produces 1536-dimensional vectors.
 public sealed class IntentRecord
@@ -25,7 +25,13 @@ public sealed class IntentRecord
     public string[] Keywords { get; set; } = Array.Empty<string>();
 
     [VectorStoreData]
-    public string PayloadTemplateJson { get; set; } = "{}";
+    public string[] RequiredFields { get; set; } = Array.Empty<string>();
+
+    [VectorStoreData]
+    public string[] OptionalFields { get; set; } = Array.Empty<string>();
+
+    [VectorStoreData]
+    public string RejectRulesJson { get; set; } = "[]";
 
     [VectorStoreVector(Dimensions: EmbeddingDimensions)]
     public ReadOnlyMemory<float> Vector { get; set; }

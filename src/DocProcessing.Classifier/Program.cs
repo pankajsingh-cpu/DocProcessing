@@ -45,7 +45,11 @@ builder.Services.AddMassTransit(x =>
         cfg.UseDocProcDocumentIdLogScope(ctx);
         cfg.Host(builder.Configuration.GetConnectionString("messaging")
             ?? throw new InvalidOperationException("Connection string 'messaging' not found"));
-        cfg.ConfigureEndpoints(ctx);
+
+        // Explicit queue name to match the saga's .Send(new Uri("queue:classify"), ...).
+        // Auto-naming via ConfigureEndpoints would produce "Classify" and
+        // RabbitMQ is case-sensitive, so the saga's command would never arrive.
+        cfg.ReceiveEndpoint("classify", e => e.ConfigureConsumer<ClassifyConsumer>(ctx));
     });
 });
 

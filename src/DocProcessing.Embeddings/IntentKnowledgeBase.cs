@@ -49,23 +49,24 @@ public sealed class IntentKnowledgeBase(
             return null;
         }
 
-        JsonElement template;
+        RejectRule[] rules;
         try
         {
-            using var doc = JsonDocument.Parse(record.PayloadTemplateJson);
-            template = doc.RootElement.Clone();
+            rules = JsonSerializer.Deserialize<RejectRule[]>(record.RejectRulesJson) ?? Array.Empty<RejectRule>();
         }
         catch (JsonException ex)
         {
             logger.LogError(ex,
-                "Stored payload_template for intent {IntentName} is not valid JSON; returning empty object",
+                "Stored reject_rules for intent {IntentName} is not valid JSON; returning empty rule set",
                 intentName);
-            template = JsonDocument.Parse("{}").RootElement.Clone();
+            rules = Array.Empty<RejectRule>();
         }
 
         return new IntentSchema(
             Name: record.Name,
             Definition: record.Definition,
-            PayloadTemplate: template);
+            RequiredFields: record.RequiredFields,
+            OptionalFields: record.OptionalFields,
+            RejectRules: rules);
     }
 }

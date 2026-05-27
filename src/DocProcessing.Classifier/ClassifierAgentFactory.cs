@@ -32,8 +32,9 @@ public static class ClassifierAgentFactory
             (Func<string, CancellationToken, Task<IntentSchema?>>)kb.GetSchemaAsync,
             name: SchemaToolName,
             description:
-                "Returns the required-field and optional-field schema for a named intent. " +
-                "Call after search_intent_kb once an intent name has been chosen, to learn which fields to extract.");
+                "Returns the field schema and reject_rules for a named intent: required_fields, optional_fields, " +
+                "and the operator-side business rules. Call after search_intent_kb once an intent has been chosen, " +
+                "to learn which fields to extract and which conditions to surface in payload.alerts.");
 
         return new ChatClientAgent(
             chatClient,
