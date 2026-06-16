@@ -6,6 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Enables `dotnet user-secrets` for this test project so GITHUB_TOKEN +
+         AzureAI:DocumentIntelligence:* can be stored once per developer instead
+         of being set as env vars on every shell. -->
+    <UserSecretsId>1a3ea315-0c3a-4425-8fea-7e6c5972ac7f</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +23,9 @@
     <PackageReference Include="Microsoft.Agents.AI" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Azure.AI.DocumentIntelligence" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,6 @@
+model,file,status,ocr_pages,ocr_chars,embed_calls,embed_input_tokens,chat_calls,chat_input_tokens,chat_output_tokens,chat_reasoning_tokens,chat_total_tokens,top_intent,top_confidence,llm_ms
+openai/gpt-4o-mini,26002WF00175373.pdf,match,2,1250,4,28,7,19552,413,0,19965,drip_ocp,0.463,18190
+openai/gpt-4o-mini,26002WF00175374.pdf,match,2,1214,5,32,7,18695,425,0,19120,drip_ocp,0.595,19695
+openai/gpt-4o-mini,26002WF00175376.pdf,classify-failed:ClientResultException,2,668,1,4,10,34061,246,0,34307,,0.000,16897
+openai/gpt-4o-mini,26002WF00175383.pdf,classify-failed:ClientResultException,2,1480,4,55,5,10088,179,0,10267,,0.000,11248
+openai/gpt-4o-mini,26002WF00178034.pdf,classify-failed:ClientResultException,2,1714,0,0,0,0,0,0,0,,0.000,349

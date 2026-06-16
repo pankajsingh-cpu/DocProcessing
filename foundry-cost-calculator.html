@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Azure Foundry Cost Calculator — DocProcessing</title>
+<style>
+  :root{
+    --purple:#4b1c6b; --green:#1f8a6b; --bg:#f4eef8; --line:#d9c8e6;
+    --ink:#2a2230; --muted:#6c5d78; --accent:#7a2da0; --win:#1f8a6b; --lose:#b23b3b;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Segoe UI,system-ui,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+  header{background:var(--purple);color:#fff;padding:18px 26px;border-bottom:6px solid var(--green)}
+  header h1{margin:0;font-size:22px}
+  header p{margin:4px 0 0;opacity:.85;font-size:13px}
+  .wrap{max-width:1120px;margin:0 auto;padding:22px}
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tabs button{background:#fff;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:10px 18px;font-size:14px;cursor:pointer}
+  .tabs button.active{background:var(--accent);color:#fff}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:18px}
+  .card h2{margin:0 0 14px;font-size:15px;color:var(--purple);text-transform:uppercase;letter-spacing:.5px}
+  .card h2 .pill{float:right;font-size:11px;text-transform:none;letter-spacing:0}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 3px}
+  input,select{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:6px;font-size:14px;background:#fff}
+  input[readonly]{background:#f7f3fb;color:#555}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:3px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
+  td.l,th.l{text-align:left}
+  .total td{border-top:2px solid var(--purple);border-bottom:none;font-weight:700;font-size:16px;color:var(--purple);padding-top:12px}
+  .sub td{color:var(--muted)}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  button.act{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:9px 14px;font-size:13px;cursor:pointer}
+  button.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:9px 14px;font-size:13px;cursor:pointer}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.5;background:#eef7f3;border:1px solid #cfe7dd;border-radius:8px;padding:12px 14px}
+  .big{font-size:30px;font-weight:800;color:var(--purple);margin:2px 0}
+  .pill{display:inline-block;background:#efe6f5;color:var(--accent);border-radius:20px;padding:2px 10px;font-size:11px}
+  .win{color:var(--win);font-weight:700}.lose{color:var(--lose);font-weight:700}
+  .verdict{font-size:18px;font-weight:800;margin:6px 0}
+  a{color:var(--accent)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Azure AI Foundry — Cost Analysis Calculator</h1>
+  <p>DocProcessing · token + page based costing · all rates editable · USD (≈ June 2026)</p>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button id="tabCalcBtn" class="active" onclick="showTab('calc')">Single calculator</button>
+    <button id="tabCmpBtn" onclick="showTab('cmp')">TTA vs Foundry comparison</button>
+  </div>
+
+  <!-- ===================== SINGLE CALCULATOR ===================== -->
+  <div id="tabCalc">
+    <div class="btns" style="margin-bottom:16px">
+      <button class="act" onclick="loadCalcPreset('dripocp')">Preset: DripOCP @ 100k pages (gpt-4.1, +20% buffer)</button>
+      <button class="ghost" onclick="loadCalcPreset('blank')">Clear</button>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>LLM (chat)</h2>
+          <label>Model</label>
+          <select id="c_llmModel" onchange="modelToRates('c_')"></select>
+          <div class="row">
+            <div><label>Input rate ($ / 1M)</label><input id="c_llmIn" type="number" step="0.001" oninput="calcSingle()"/></div>
+            <div><label>Output rate ($ / 1M)</label><input id="c_llmOut" type="number" step="0.001" oninput="calcSingle()"/></div>
+          </div>
+          <label>Total LLM tokens (input + output)</label>
+          <input id="c_llmTokens" type="number" step="1" oninput="calcSingle()"/>
+          <label>Input token share (%)</label>
+          <input id="c_inShare" type="number" step="0.1" min="0" max="100" oninput="calcSingle()"/>
+          <label>Safety buffer % (matches slideshow; on LLM + embed tokens, not OCR pages)</label>
+          <input id="c_buffer" type="number" step="1" oninput="calcSingle()"/>
+          <div class="hint" id="c_shareHint"></div>
+        </div>
+        <div class="card">
+          <h2>Embeddings</h2>
+          <label>Model</label>
+          <select id="c_embModel" onchange="embToRate('c_')"></select>
+          <div class="row">
+            <div><label>Rate ($ / 1M)</label><input id="c_embRate" type="number" step="0.001" oninput="calcSingle()"/></div>
+            <div><label>Tokens (input only)</label><input id="c_embTokens" type="number" step="1" oninput="calcSingle()"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>OCR (Document Intelligence)</h2>
+          <label>Model / tier</label>
+          <select id="c_ocrModel" onchange="ocrToRate('c_')"></select>
+          <div class="row3">
+            <div><label>$ / 1000 pages</label><input id="c_ocrRate" type="number" step="0.01" oninput="calcSingle()"/></div>
+            <div><label>Page count</label><input id="c_ocrPages" type="number" step="1" oninput="calcSingle()"/></div>
+            <div><label>Free pages/mo</label><input id="c_ocrFree" type="number" step="1" oninput="calcSingle()"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Currency</h2>
+          <div class="row">
+            <div><label>USD → GBP (1 = hide)</label><input id="c_fx" type="number" step="0.0001" oninput="calcSingle()"/></div>
+            <div><label>&nbsp;</label><div class="hint">Azure bills USD; prod region UK South.</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Total Azure Foundry cost</h2>
+          <div class="big" id="c_grandUsd">$0.00</div>
+          <div id="c_grandGbp" style="color:var(--muted);font-size:15px"></div>
+          <div class="hint" id="c_perPage"></div>
+        </div>
+        <div class="card">
+          <h2>Breakdown</h2>
+          <table><thead><tr><th class="l">Resource</th><th>Tokens / pages</th><th>USD</th></tr></thead>
+          <tbody id="c_rows"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== COMPARISON ===================== -->
+  <div id="tabCmp" class="hidden">
+    <div class="btns" style="margin-bottom:16px">
+      <button class="act" onclick="loadCmpPreset()">Reset to DripOCP @ 100k pages</button>
+      <span class="hint" style="align-self:center">Pick any model per side; both default to gpt-4.1 for a like-for-like rate basis.</span>
+    </div>
+    <div class="grid">
+      <!-- Foundry -->
+      <div class="card">
+        <h2>Foundry solution <span class="pill">measured</span></h2>
+        <label>LLM model</label>
+        <select id="f_llmModel" onchange="modelToRates('f_')"></select>
+        <div class="row">
+          <div><label>Input $/1M</label><input id="f_llmIn" type="number" step="0.001" oninput="calcCmp()"/></div>
+          <div><label>Output $/1M</label><input id="f_llmOut" type="number" step="0.001" oninput="calcCmp()"/></div>
+        </div>
+        <div class="row">
+          <div><label>Total LLM tokens</label><input id="f_llmTokens" type="number" oninput="calcCmp()"/></div>
+          <div><label>Input share %</label><input id="f_inShare" type="number" step="0.1" oninput="calcCmp()"/></div>
+        </div>
+        <label>Safety buffer % (20% matches slideshow; on LLM + embed tokens)</label>
+        <input id="f_buffer" type="number" step="1" oninput="calcCmp()"/>
+        <div class="row3">
+          <div><label>Embed $/1M</label><input id="f_embRate" type="number" step="0.001" oninput="calcCmp()"/></div>
+          <div><label>Embed tokens</label><input id="f_embTokens" type="number" oninput="calcCmp()"/></div>
+          <div><label>&nbsp;</label><input id="f_embModel" type="hidden"/><div class="hint">text-embedding-3-small</div></div>
+        </div>
+        <div class="row3">
+          <div><label>OCR $/1k pg</label><input id="f_ocrRate" type="number" step="0.01" oninput="calcCmp()"/></div>
+          <div><label>OCR pages</label><input id="f_ocrPages" type="number" oninput="calcCmp()"/></div>
+          <div><label>Free pages</label><input id="f_ocrFree" type="number" oninput="calcCmp()"/></div>
+        </div>
+      </div>
+      <!-- TTA -->
+      <div class="card">
+        <h2>TTA solution <span class="pill">estimate</span></h2>
+        <label>LLM model</label>
+        <select id="t_llmModel" onchange="modelToRates('t_')"></select>
+        <div class="row">
+          <div><label>Input $/1M</label><input id="t_llmIn" type="number" step="0.001" oninput="calcCmp()"/></div>
+          <div><label>Output $/1M</label><input id="t_llmOut" type="number" step="0.001" oninput="calcCmp()"/></div>
+        </div>
+        <div class="row">
+          <div><label>Total LLM tokens</label><input id="t_llmTokens" type="number" oninput="calcCmp()"/></div>
+          <div><label>Input share %</label><input id="t_inShare" type="number" step="0.1" oninput="calcCmp()"/></div>
+        </div>
+        <label>Safety buffer % (already baked into 295M → keep 0)</label>
+        <input id="t_buffer" type="number" step="1" oninput="calcCmp()"/>
+        <div class="row3">
+          <div><label>Embed $/1M</label><input id="t_embRate" type="number" step="0.001" oninput="calcCmp()"/></div>
+          <div><label>Embed tokens</label><input id="t_embTokens" type="number" oninput="calcCmp()"/></div>
+          <div><label>&nbsp;</label><div class="hint">none modelled</div></div>
+        </div>
+        <div class="row3">
+          <div><label>OCR $/1k pg</label><input id="t_ocrRate" type="number" step="0.01" oninput="calcCmp()"/></div>
+          <div><label>OCR pages</label><input id="t_ocrPages" type="number" oninput="calcCmp()"/></div>
+          <div><label>Free pages</label><input id="t_ocrFree" type="number" oninput="calcCmp()"/></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Cost comparison — DripOCP @ stated volume</h2>
+      <div class="verdict" id="cmp_verdict"></div>
+      <table>
+        <thead><tr><th class="l">Resource</th><th>Foundry (USD)</th><th>TTA (USD)</th><th>Δ (F − T)</th></tr></thead>
+        <tbody id="cmp_rows"></tbody>
+      </table>
+      <div class="hint" id="cmp_perPage" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Notes &amp; assumptions</h2>
+    <div class="note">
+      <b>Rates</b> are published Azure AI Foundry pay-as-you-go prices, est. <b>June 2026</b>,
+      US/global-standard deployment — they vary by region/deployment type (global/data-zone/PTU)
+      and change often, so <b>every rate is editable</b>. PTU &amp; commitment tiers (not modelled)
+      can cut effective costs materially.<br/><br/>
+      <b>Foundry</b> figures are measured (gpt-4.1, 8 DripOCP docs → 100k pages): 227.57M LLM tokens
+      (94.4% input), 2.6M embedding tokens, 100,000 OCR pages. A <b>20% safety buffer</b> is applied
+      to the token estimates (LLM + embed, not OCR pages) to match the slideshow methodology — set it
+      to 0 to see raw measured cost.<br/>
+      <b>TTA</b> figures are from <i>TTA-Cost-Analysis.png</i>: combined Extraction + Classification =
+      295.0M tokens (includes their 20% buffer); input share 65.8% derived from their stated
+      2,500-in / 1,300-out per-page rate. TTA runs <b>MSDI (Document Intelligence) on Computershare's
+      Foundry</b>, so the OCR line is <b>like-for-like</b> with our solution — same 100,000 pages, same
+      rate, same free tier (it cancels out of the comparison). No KB-grounding embeddings are modelled
+      on the TTA side.<br/><br/>
+      Sources:
+      <a href="https://azure.microsoft.com/en-us/pricing/details/azure-openai/" target="_blank">Azure OpenAI pricing</a> ·
+      <a href="https://azure.microsoft.com/en-us/pricing/details/document-intelligence/" target="_blank">Document Intelligence pricing</a>.
+    </div>
+  </div>
+</div>
+
+<script>
+const LLM = {
+  "openai/gpt-4.1":{in:2.00,out:8.00},"openai/gpt-4.1-mini":{in:0.40,out:1.60},"openai/gpt-4.1-nano":{in:0.10,out:0.40},
+  "openai/gpt-4o":{in:2.50,out:10.00},"openai/gpt-4o-mini":{in:0.15,out:0.60},
+  "openai/gpt-5":{in:1.25,out:10.00},"openai/gpt-5-mini":{in:0.25,out:2.00},"openai/gpt-5-nano":{in:0.05,out:0.40},
+  "custom":{in:0,out:0}
+};
+const EMB={"text-embedding-3-small":0.02,"text-embedding-3-large":0.13,"text-embedding-ada-002":0.10,"custom":0};
+const OCR={"prebuilt-layout ($10/1k)":10.00,"Read / OCR ($1.50/1k)":1.50,"commitment tier (~$0.53/1k)":0.53,"custom":0};
+
+const $=id=>document.getElementById(id);
+function fill(sel,obj){if(!sel)return;sel.innerHTML="";for(const k of Object.keys(obj)){const o=document.createElement("option");o.value=k;o.textContent=k;sel.appendChild(o);}}
+["c_llmModel","f_llmModel","t_llmModel"].forEach(id=>fill($(id),LLM));
+fill($("c_embModel"),EMB); fill($("c_ocrModel"),OCR);
+
+function modelToRates(p){const m=LLM[$(p+"llmModel").value];$(p+"llmIn").value=m.in;$(p+"llmOut").value=m.out; p==="c_"?calcSingle():calcCmp();}
+function embToRate(p){$(p+"embRate").value=EMB[$(p+"embModel").value];calcSingle();}
+function ocrToRate(p){$(p+"ocrRate").value=OCR[$(p+"ocrModel").value];calcSingle();}
+
+const money=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const gbp=n=>"£"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const intf=n=>Math.round(n||0).toLocaleString();
+
+// generic costing from a prefix; buffer% inflates LLM+embed tokens (not OCR pages)
+function cost(p,withBuffer){
+  const buf = withBuffer ? (1+(+$(p+"buffer").value||0)/100) : 1;
+  const tok=(+$(p+"llmTokens").value||0)*buf;
+  const share=Math.min(100,Math.max(0,+$(p+"inShare").value||0));
+  const inTok=tok*share/100, outTok=tok*(100-share)/100;
+  const inCost=inTok/1e6*(+$(p+"llmIn").value||0), outCost=outTok/1e6*(+$(p+"llmOut").value||0);
+  const embTok=(+$(p+"embTokens").value||0)*buf, embCost=embTok/1e6*(+$(p+"embRate").value||0);
+  const pages=+$(p+"ocrPages").value||0, free=+$(p+"ocrFree").value||0;
+  const billable=Math.max(0,pages-free), ocrCost=billable/1000*(+$(p+"ocrRate").value||0);
+  return {inTok,outTok,inCost,outCost,llm:inCost+outCost,embTok,embCost,pages,billable,ocrCost,
+          total:inCost+outCost+embCost+ocrCost};
+}
+
+function calcSingle(){
+  const r=cost("c_",true);
+  const bp=+$("c_buffer").value||0;
+  $("c_shareHint").textContent=`input ${intf(r.inTok)} · output ${intf(r.outTok)} tok`+(bp?`  (incl. ${bp}% buffer)`:"");
+  $("c_rows").innerHTML=`
+    <tr class="sub"><td class="l">LLM — input</td><td>${intf(r.inTok)}</td><td>${money(r.inCost)}</td></tr>
+    <tr class="sub"><td class="l">LLM — output</td><td>${intf(r.outTok)}</td><td>${money(r.outCost)}</td></tr>
+    <tr><td class="l"><b>LLM subtotal</b></td><td>${intf(r.inTok+r.outTok)}</td><td><b>${money(r.llm)}</b></td></tr>
+    <tr><td class="l">Embeddings</td><td>${intf(r.embTok)}</td><td>${money(r.embCost)}</td></tr>
+    <tr><td class="l">OCR</td><td>${intf(r.billable)} pg</td><td>${money(r.ocrCost)}</td></tr>
+    <tr class="total"><td class="l">TOTAL</td><td></td><td>${money(r.total)}</td></tr>`;
+  $("c_grandUsd").textContent=money(r.total);
+  const fx=+$("c_fx").value||0;
+  $("c_grandGbp").textContent=(fx>0&&fx!==1)?gbp(r.total*fx)+`  @ ${fx}`:"";
+  $("c_perPage").textContent=r.pages>0?`${money(r.total/r.pages)} per page · ${money(r.total/(r.pages/1000))} per 1,000 pages`:"";
+}
+
+function calcCmp(){
+  const f=cost("f_",true), t=cost("t_",true);
+  const d=v=>{const cls=v>0?"lose":v<0?"win":"";return `<span class="${cls}">${v>=0?"+":"−"}${money(Math.abs(v)).slice(1)}</span>`;};
+  const row=(label,a,b)=>`<tr><td class="l">${label}</td><td>${money(a)}</td><td>${money(b)}</td><td>${d(a-b)}</td></tr>`;
+  $("cmp_rows").innerHTML=
+    row("LLM input",f.inCost,t.inCost)+
+    row("LLM output",f.outCost,t.outCost)+
+    `<tr class="sub">${`<td class="l">— LLM subtotal</td><td>${money(f.llm)}</td><td>${money(t.llm)}</td><td>${d(f.llm-t.llm)}</td>`}</tr>`+
+    row("Embeddings",f.embCost,t.embCost)+
+    row("OCR (Document Intelligence)",f.ocrCost,t.ocrCost)+
+    `<tr class="total"><td class="l">TOTAL</td><td>${money(f.total)}</td><td>${money(t.total)}</td><td>${d(f.total-t.total)}</td></tr>`;
+  const diff=f.total-t.total, pct=t.total>0?Math.abs(diff)/t.total*100:0;
+  let v;
+  if(Math.abs(diff)<0.01) v=`Foundry and TTA cost the same (${money(f.total)}).`;
+  else if(diff<0) v=`<span class="win">Foundry is cheaper by ${money(-diff)} (${pct.toFixed(0)}% less)</span> — ${money(f.total)} vs ${money(t.total)}.`;
+  else v=`<span class="lose">Foundry is dearer by ${money(diff)} (${pct.toFixed(0)}% more)</span> — ${money(f.total)} vs ${money(t.total)}. (OCR per-page charge is the swing factor — try the Read or commitment OCR tier.)`;
+  $("cmp_verdict").innerHTML=v;
+  const fp=f.pages||0, tp=t.pages||0, basis=Math.max(fp,tp,1);
+  $("cmp_perPage").innerHTML=`Per page @ ${intf(basis)} pages: Foundry ${money(f.total/basis)} · TTA ${money(t.total/basis)}. `+
+    `LLM-only (excl. OCR/embed): Foundry ${money(f.llm)} vs TTA ${money(t.llm)} → `+
+    (f.llm<t.llm?`<span class="win">Foundry ${(100-f.llm/t.llm*100).toFixed(0)}% cheaper on tokens</span>`:`<span class="lose">TTA cheaper on tokens</span>`)+`.`;
+}
+
+function showTab(which){
+  $("tabCalc").classList.toggle("hidden",which!=="calc");
+  $("tabCmp").classList.toggle("hidden",which!=="cmp");
+  $("tabCalcBtn").classList.toggle("active",which==="calc");
+  $("tabCmpBtn").classList.toggle("active",which==="cmp");
+  which==="calc"?calcSingle():calcCmp();
+}
+
+function loadCalcPreset(name){
+  const blank=name==="blank";
+  $("c_llmModel").value="openai/gpt-4.1"; modelToRates("c_");
+  $("c_llmTokens").value=blank?0:227570000; $("c_inShare").value=94.4; $("c_buffer").value=blank?0:20;
+  $("c_embModel").value="text-embedding-3-small"; embToRate("c_"); $("c_embTokens").value=blank?0:2600000;
+  $("c_ocrModel").value="prebuilt-layout ($10/1k)"; ocrToRate("c_"); $("c_ocrPages").value=blank?0:100000; $("c_ocrFree").value=500;
+  $("c_fx").value=0.79; calcSingle();
+}
+function loadCmpPreset(){
+  // Foundry (measured, no buffer)
+  $("f_llmModel").value="openai/gpt-4.1"; modelToRates("f_");
+  $("f_llmTokens").value=227570000; $("f_inShare").value=94.4; $("f_buffer").value=20;
+  $("f_embRate").value=0.02; $("f_embTokens").value=2600000;
+  $("f_ocrRate").value=10.00; $("f_ocrPages").value=100000; $("f_ocrFree").value=500;
+  // TTA (estimate; buffer already in 295M; no OCR/embed)
+  $("t_llmModel").value="openai/gpt-4.1"; modelToRates("t_");
+  $("t_llmTokens").value=295000000; $("t_inShare").value=65.8; $("t_buffer").value=0;
+  $("t_embRate").value=0.02; $("t_embTokens").value=0;
+  // TTA uses MSDI (Document Intelligence) on Computershare's Foundry — same OCR
+  // line as our solution, so it is like-for-like (same pages, rate, free tier).
+  $("t_ocrRate").value=10.00; $("t_ocrPages").value=100000; $("t_ocrFree").value=500;
+  calcCmp();
+}
+
+loadCalcPreset('dripocp');
+loadCmpPreset();
+</script>
+</body>
+</html>
